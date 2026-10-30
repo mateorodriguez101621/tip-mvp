@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TIP · Copiloto de tesorería</title>
+<link rel="icon" href="logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,600;1,700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--p:#5449DD;--pd:#3B2FC9;--ink:#2B2470;--mut:#7A7398;--line:#E3DEF5;--card:rgba(255,255,255,.82);--red:#D64545;--green:#1F9D6B;--amber:#D98B1F}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Poppins,system-ui,sans-serif;color:var(--ink);font-size:14px;line-height:1.45;min-height:100vh;
+background:radial-gradient(circle at 100% 0,#C9C0F5 0,rgba(201,192,245,0) 35%),radial-gradient(circle at 0 100%,#C9D3F2 0,rgba(201,211,242,0) 30%),linear-gradient(120deg,#ECE8EE,#F4E9F4 55%,#FBE9F9)}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}.brand img{width:38px;height:38px}
+.brand b{font-size:26px;color:var(--p);letter-spacing:-.5px}.brand span{color:var(--mut);font-style:italic;font-size:12px;display:block;margin-top:-4px}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button{border:0;background:transparent;color:var(--mut);font:inherit;font-weight:600;padding:8px 14px;border-radius:999px;cursor:pointer}
+nav button.on{background:var(--p);color:#fff}
+main{max-width:1180px;margin:0 auto;padding:4px 20px 40px}
+.view{display:none}.view.on{display:block}
+h2{font-style:italic;font-weight:700;color:var(--pd);font-size:20px;margin:18px 0 10px}
+h3{font-size:14px;font-weight:600;color:var(--pd);margin-bottom:8px}
+.card{background:var(--card);border-radius:14px;padding:16px;box-shadow:0 1px 0 rgba(84,73,221,.05)}
+.grid{display:grid;gap:14px}
+.k4{grid-template-columns:repeat(4,1fr)}.c2{grid-template-columns:1.6fr 1fr}.c2e{grid-template-columns:1fr 1fr}
+@media(max-width:860px){.k4{grid-template-columns:1fr 1fr}.c2,.c2e{grid-template-columns:1fr}}
+.kpi .n{font-size:24px;font-weight:700;color:var(--p)}.kpi .l{font-size:12px;color:var(--mut)}
+.n.bad{color:var(--red)}.n.ok{color:var(--green)}
+.alert{border-left:4px solid var(--red);padding:14px 16px;border-radius:0 12px 12px 0;background:#fff;margin-bottom:10px}
+.alert.ok{border-color:var(--green)}.alert.info{border-color:var(--p)}
+.alert .t{font-weight:600}.alert .s{margin-top:6px;font-size:13px}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEEBFC;color:var(--pd);margin-right:6px}
+.tag.r{background:#FBE4E4;color:var(--red)}.tag.g{background:#DDF3EA;color:var(--green)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--mut);font-weight:600;padding:6px;border-bottom:1.5px solid var(--p)}
+td{padding:4px 6px;border-bottom:1px solid var(--line)}
+td input,td select{width:100%;border:1px solid transparent;background:transparent;font:inherit;padding:4px;border-radius:6px;color:var(--ink)}
+td input:focus,td select:focus{border-color:var(--p);outline:0;background:#fff}
+.btn{border:0;background:var(--p);color:#fff;font:inherit;font-weight:600;padding:8px 14px;border-radius:10px;cursor:pointer}
+.btn.g{background:#fff;color:var(--p);border:1px solid var(--line)}.btn.x{background:transparent;color:var(--mut);padding:4px 8px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+label.f{display:block;font-size:12px;color:var(--mut);margin-bottom:10px}
+label.f input{display:block;width:100%;margin-top:3px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;font:inherit;color:var(--ink);background:#fff}
+input[type=range]{width:100%;accent-color:var(--p)}
+.sl{margin-bottom:14px}.sl .h{display:flex;justify-content:space-between;font-size:13px}.sl .h b{color:var(--p)}
+.muted{color:var(--mut);font-size:12px}
+.prob{font-size:40px;font-weight:700}
+canvas{max-height:320px}
+.foot{text-align:center;color:var(--mut);font-size:12px;margin-top:28px}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand"><img src="logo.svg" alt=""><div><b>TIP</b><span>Tesorería inteligente para PyMEs</span></div></div>
+ <nav>
+  <button data-v="panel" class="on">Panel</button>
+  <button data-v="datos">Datos</button>
+  <button data-v="escenarios">Escenarios</button>
+ </nav>
+</header>
+<main>
+
+<!-- PANEL -->
+<section class="view on" id="panel">
+ <div class="grid k4">
+  <div class="card kpi"><div class="n" id="kCaja"></div><div class="l">Caja hoy (USD equivalente)</div></div>
+  <div class="card kpi"><div class="n" id="kMin"></div><div class="l" id="kMinL">Saldo mínimo proyectado</div></div>
+  <div class="card kpi"><div class="n" id="kUsd"></div><div class="l">Pagos en USD comprometidos</div></div>
+  <div class="card kpi"><div class="n" id="kTax"></div><div class="l">Impuestos estimados (ARS)</div></div>
+ </div>
+ <div class="grid c2" style="margin-top:14px">
+  <div class="card"><h3>Flujo de caja proyectado · próximos <span id="horiz"></span> días</h3><canvas id="ch"></canvas>
+   <p class="muted">Saldo en pesos. Los pagos en dólares se convierten al tipo de cambio proyectado de cada fecha.</p></div>
+  <div><h3 style="margin-top:4px">Alertas y recomendaciones</h3><div id="alerts"></div></div>
+ </div>
+ <div class="card" style="margin-top:14px"><h3>Próximos movimientos</h3><table id="next"></table></div>
+</section>
+
+<!-- DATOS -->
+<section class="view" id="datos">
+ <div class="grid c2e">
+  <div class="card">
+   <h3>Empresa y supuestos</h3>
+   <label class="f">Empresa<input id="iEmp"></label>
+   <label class="f">Caja hoy en pesos (ARS)<input id="iCajaArs" type="number"></label>
+   <label class="f">Caja hoy en dólares (USD)<input id="iCajaUsd" type="number"></label>
+   <label class="f">Tipo de cambio hoy (ARS por USD)<input id="iTc" type="number"></label>
+   <label class="f">Devaluación mensual esperada (%)<input id="iDev" type="number" step="0.1"></label>
+   <label class="f">Saldo mínimo de seguridad (ARS)<input id="iMinS" type="number"></label>
+  </div>
+  <div class="card">
+   <h3>Cargar datos</h3>
+   <p class="muted" style="margin-bottom:10px">Subí un CSV exportado de Excel o de tu sistema contable con las columnas <b>tipo, concepto, monto, moneda, fecha, puntualidad</b>. Tipo: cobro, pago o impuesto. Puntualidad: % de veces que ese cliente pagó a tiempo (solo cobros).</p>
+   <div class="row"><input type="file" id="file" accept=".csv,text/csv"><button class="btn g" id="tpl">Descargar plantilla</button></div>
+   <p class="muted" id="fileMsg" style="margin-top:8px"></p>
+   <div class="row" style="margin-top:18px"><button class="btn g" id="bDemo">Volver a los datos de ejemplo</button></div>
+   <p class="muted" style="margin-top:8px">Los datos se guardan en este navegador. En la versión 1 se conecta solo a ARCA, bancos y al sistema contable.</p>
+  </div>
+ </div>
+ <div class="card" style="margin-top:14px">
+  <div class="row" style="justify-content:space-between"><h3>Movimientos</h3><button class="btn" id="add">+ Agregar</button></div>
+  <table><thead><tr><th>Tipo</th><th>Concepto</th><th>Monto</th><th>Moneda</th><th>Fecha</th><th>Puntualidad %</th><th></th></tr></thead><tbody id="mov"></tbody></table>
+ </div>
+</section>
+
+<!-- ESCENARIOS -->
+<section class="view" id="escenarios">
+ <div class="grid c2">
+  <div class="card"><h3>Escenario vs. base</h3><canvas id="chS"></canvas>
+   <p class="muted">La línea punteada es la proyección base; la sólida, el escenario elegido. La banda muestra el rango entre el 10% y el 90% de 1.000 simulaciones.</p></div>
+  <div class="card">
+   <h3>¿Y si...?</h3>
+   <div class="sl"><div class="h"><span>El dólar salta hoy</span><b id="vShock"></b></div><input type="range" id="sShock" min="0" max="50" value="0"></div>
+   <div class="sl"><div class="h"><span>Los clientes pagan tarde</span><b id="vDelay"></b></div><input type="range" id="sDelay" min="0" max="60" value="0"></div>
+   <div class="sl"><div class="h"><span>Cae la cobranza</span><b id="vCut"></b></div><input type="range" id="sCut" min="0" max="50" value="0"></div>
+   <hr style="border:0;border-top:1px solid var(--line);margin:8px 0 14px">
+   <div class="muted">Probabilidad de quedarte sin caja en el horizonte</div>
+   <div class="prob" id="pFalt"></div>
+   <div class="muted" id="pTxt"></div>
+  </div>
+ </div>
+</section>
+
+<p class="foot">TIP · MVP con datos de ejemplo · Desarrollo de Nuevos Negocios 2026</p>
+</main>
+
+<script>
+const KEY='tip-mvp-v1', H=90, DAY=864e5;
+const today=new Date();today.setHours(0,0,0,0);
+const iso=d=>new Date(d).toISOString().slice(0,10);
+const addD=n=>iso(+today+n*DAY);
+const fmtA=n=>'$ '+Math.round(n).toLocaleString('es-AR');
+const fmtU=n=>'USD '+Math.round(n).toLocaleString('es-AR');
+const daysTo=s=>Math.round((new Date(s+'T00:00')-today)/DAY);
+
+function demo(){return{emp:'Importadora Delta (ejemplo)',cajaArs:56000000,cajaUsd:12000,tc:1450,dev:2,minS:5000000,mov:[
+ {tipo:'cobro',concepto:'Cliente Alarmas Norte',monto:18000000,moneda:'ARS',fecha:addD(12),punt:95},
+ {tipo:'pago',concepto:'Proveedor Shenzhen (cámaras)',monto:22000,moneda:'USD',fecha:addD(18),punt:''},
+ {tipo:'cobro',concepto:'Cliente Integradora Sur',monto:25000000,moneda:'ARS',fecha:addD(25),punt:60},
+ {tipo:'impuesto',concepto:'IVA',monto:9500000,moneda:'ARS',fecha:addD(20),punt:''},
+ {tipo:'impuesto',concepto:'Ingresos Brutos',monto:3200000,moneda:'ARS',fecha:addD(16),punt:''},
+ {tipo:'pago',concepto:'Sueldos y gastos fijos',monto:14000000,moneda:'ARS',fecha:addD(30),punt:''},
+ {tipo:'pago',concepto:'Proveedor Hangzhou (grabadores)',monto:50000,moneda:'USD',fecha:addD(40),punt:''},
+ {tipo:'cobro',concepto:'Cliente Seguridad Total',monto:30000000,moneda:'ARS',fecha:addD(46),punt:88},
+ {tipo:'cobro',concepto:'Cliente Edificios Palermo',monto:12000000,moneda:'ARS',fecha:addD(33),punt:92},
+ {tipo:'impuesto',concepto:'IVA',monto:10500000,moneda:'ARS',fecha:addD(48),punt:''},
+ {tipo:'pago',concepto:'Sueldos y gastos fijos',monto:14000000,moneda:'ARS',fecha:addD(60),punt:''},
+ {tipo:'cobro',concepto:'Cliente Alarmas Norte',monto:20000000,moneda:'ARS',fecha:addD(70),punt:95},
+ {tipo:'pago',concepto:'Despachante y flete',monto:6000000,moneda:'ARS',fecha:addD(42),punt:''},
+ {tipo:'pago',concepto:'Sueldos y gastos fijos',monto:14000000,moneda:'ARS',fecha:addD(90),punt:''}]}}
+let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!S.mov)S=demo();
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+// tipo de cambio proyectado para el día t
+const tcAt=(t,shock=0)=>S.tc*(1+shock)*Math.pow(1+S.dev/100,t/30);
+
+// proyección diaria; opts: shock, delay (días), cut (fracción), rnd (función aleatoria para simulación)
+function project(o={}){
+ const bal=new Array(H+1).fill(0);let b=S.cajaArs+S.cajaUsd*S.tc;
+ const flows=new Array(H+1).fill(0);
+ const shock=o.shock||0;
+ for(const m of S.mov){
+  let t=daysTo(m.fecha);
+  if(m.tipo==='cobro'){
+   let late=o.delay||0;
+   if(o.rnd){const p=(+m.punt||80)/100;if(o.rnd()>p)late+=Math.round(10+o.rnd()*30);}
+   t+=late;
+  }
+  if(t<0||t>H)continue;
+  const tcx=o.rnd?o.fx[t]:tcAt(t,shock);
+  let v=m.moneda==='USD'?m.monto*tcx:m.monto;
+  if(m.tipo==='cobro'){if(o.cut)v*=1-o.cut;flows[t]+=v}else flows[t]-=v;
+ }
+ // el saldo en USD se revaloriza con el tipo de cambio
+ for(let t=0;t<=H;t++){b+=flows[t];const tcx=o.rnd?o.fx[t]:tcAt(t,shock);bal[t]=b+S.cajaUsd*(tcx-S.tc);}
+ return bal;
+}
+function firstNeg(bal,th=0){for(let t=0;t<=H;t++)if(bal[t]<th)return t;return -1}
+
+function simulate(o){
+ let fails=0;const runs=[];let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+ const N=1000,vol=0.12; // volatilidad anual del TC
+ for(let i=0;i<N;i++){
+  const fx=[];let x=S.tc*(1+(o.shock||0));
+  for(let t=0;t<=H;t++){fx.push(x);const z=Math.sqrt(-2*Math.log(rnd()+1e-12))*Math.cos(2*Math.PI*rnd());x*=Math.exp(Math.log(1+S.dev/100)/30+vol*Math.sqrt(1/365)*z)}
+  const bal=project({...o,rnd,fx});runs.push(bal);if(firstNeg(bal)>=0)fails++;
+ }
+ const p10=[],p90=[];
+ for(let t=0;t<=H;t++){const c=runs.map(r=>r[t]).sort((a,b)=>a-b);p10.push(c[Math.floor(N*.1)]);p90.push(c[Math.floor(N*.9)])}
+ return{p:fails/N,p10,p90};
+}
+
+// ---------- alertas ----------
+function alertsHtml(bal){
+ let h='';const t0=firstNeg(bal);
+ if(t0>=0){
+  const deficit=-Math.min(...bal.slice(t0,Math.min(H,t0+15)+1));
+  const tc=tcAt(t0);
+  const pago=S.mov.filter(m=>m.tipo!=='cobro'&&daysTo(m.fecha)===t0)[0]||S.mov.filter(m=>m.tipo!=='cobro'&&daysTo(m.fecha)>=t0).sort((a,b)=>daysTo(a.fecha)-daysTo(b.fecha))[0];
+  // recomendación: cobros posteriores al faltante de clientes puntuales, que se podrían adelantar
+  const cand=S.mov.filter(m=>m.tipo==='cobro'&&daysTo(m.fecha)>t0&&daysTo(m.fecha)<=t0+45).filter(m=>(+m.punt||0)>=80).sort((a,b)=>daysTo(a.fecha)-daysTo(b.fecha));
+  let rec='',cubre=0;
+  for(const c of cand){if(cubre>=deficit)break;const v=c.moneda==='USD'?c.monto*tc:c.monto;const parte=Math.min(v,deficit-cubre);cubre+=parte;
+   rec+=`<li>Adelantar ${parte<v?'parte del cobro ('+fmtA(parte)+')':'el cobro'} de <b>${c.concepto}</b>, que vence en ${daysTo(c.fecha)} días. Paga a tiempo el ${c.punt}% de las veces.</li>`}
+  if(cubre<deficit)rec+=`<li>Tomar hoy una línea de crédito planificada por <b>${fmtA(deficit-cubre)}</b>, en vez de un financiamiento de urgencia el día del pago.</li>`;
+  h+=`<div class="alert"><span class="tag r">Faltante</span><div class="t">En ${t0} días te van a faltar ${fmtU(deficit/tc)} (${fmtA(deficit)})${pago?' para '+(pago.tipo==='impuesto'?'pagar '+pago.concepto:'tu pago a '+pago.concepto):''}.</div><div class="s"><b>Sugerencia:</b><ul style="margin:4px 0 0 18px">${rec}</ul></div></div>`;
+ }else{
+  h+=`<div class="alert ok"><span class="tag g">Sin faltantes</span><div class="t">Tu caja cubre todos los compromisos de los próximos ${H} días.</div></div>`;
+ }
+ const tm=firstNeg(bal,S.minS);
+ if(tm>=0&&(t0<0||tm<t0))h+=`<div class="alert info"><span class="tag">Atención</span><div class="t">En ${tm} días tu saldo baja del mínimo de seguridad (${fmtA(S.minS)}).</div><div class="s">Revisá si conviene renegociar algún vencimiento antes de esa fecha.</div></div>`;
+ // excedente ocioso: saldo mínimo de los próximos 30 días bien por encima del colchón
+ const m30=Math.min(...bal.slice(0,31));
+ if(t0<0&&m30>S.minS*2)h+=`<div class="alert info"><span class="tag g">Excedente</span><div class="t">Vas a tener ${fmtA(m30-S.minS)} ociosos durante los próximos 30 días.</div><div class="s"><b>Sugerencia:</b> colocarlos en un plazo fijo o una LECAP a 30 días, así no pierden valor.</div></div>`;
+ return h;
+}
+
+// ---------- render ----------
+let ch,chS;
+function render(){
+ const bal=project();
+ document.getElementById('horiz').textContent=H;
+ kCaja.textContent=fmtU(S.cajaUsd+S.cajaArs/S.tc);
+ const mn=Math.min(...bal);kMin.textContent=fmtA(mn);kMin.className='n '+(mn<0?'bad':'ok');
+ kMinL.textContent='Saldo mínimo proyectado (día '+bal.indexOf(mn)+')';
+ kUsd.textContent=fmtU(S.mov.filter(m=>m.tipo==='pago'&&m.moneda==='USD'&&daysTo(m.fecha)>=0).reduce((a,m)=>a+ +m.monto,0));
+ kTax.textContent=fmtA(S.mov.filter(m=>m.tipo==='impuesto'&&daysTo(m.fecha)>=0&&daysTo(m.fecha)<=H).reduce((a,m)=>a+ +m.monto,0));
+ alerts.innerHTML=alertsHtml(bal);
+ const lab=bal.map((_,t)=>{const d=new Date(+today+t*DAY);return d.getDate()+'/'+(d.getMonth()+1)});
+ const ds={label:'Saldo proyectado',data:bal,borderColor:'#5449DD',backgroundColor:'rgba(84,73,221,.12)',fill:{target:{value:0},above:'rgba(84,73,221,.10)',below:'rgba(214,69,69,.18)'},tension:.2,pointRadius:0,borderWidth:2.5};
+ const opts={responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtA(c.parsed.y)}}},scales:{x:{ticks:{maxTicksLimit:10,color:'#7A7398'},grid:{display:false}},y:{ticks:{color:'#7A7398',callback:v=>'$'+(v/1e6).toFixed(0)+'M'},grid:{color:'#ECE8F6'}}}};
+ if(ch)ch.destroy();ch=new Chart(document.getElementById('ch'),{type:'line',data:{labels:lab,datasets:[ds]},options:opts});
+ const up=S.mov.filter(m=>daysTo(m.fecha)>=0).sort((a,b)=>a.fecha.localeCompare(b.fecha)).slice(0,6);
+ next.innerHTML='<tr><th>Fecha</th><th>Concepto</th><th>Tipo</th><th style="text-align:right">Monto</th></tr>'+up.map(m=>`<tr><td>${m.fecha.split('-').reverse().slice(0,2).join('/')} · en ${daysTo(m.fecha)} días</td><td>${m.concepto}</td><td><span class="tag ${m.tipo==='cobro'?'g':'r'}">${m.tipo}</span></td><td style="text-align:right">${m.moneda==='USD'?fmtU(m.monto):fmtA(m.monto)}</td></tr>`).join('');
+ renderScen();
+}
+function renderScen(){
+ const o={shock:+sShock.value/100,delay:+sDelay.value,cut:+sCut.value/100};
+ vShock.textContent='+'+sShock.value+'%';vDelay.textContent=sDelay.value+' días';vCut.textContent='−'+sCut.value+'%';
+ const base=project(),esc=project(o),sim=simulate(o);
+ pFalt.textContent=Math.round(sim.p*100)+'%';pFalt.style.color=sim.p>.5?'var(--red)':sim.p>.2?'var(--amber)':'var(--green)';
+ const t0=firstNeg(esc);
+ pTxt.textContent=t0>=0?`En este escenario, el primer faltante aparece en ${t0} días.`:'En este escenario no hay faltantes en el escenario central.';
+ const lab=base.map((_,t)=>{const d=new Date(+today+t*DAY);return d.getDate()+'/'+(d.getMonth()+1)});
+ const data={labels:lab,datasets:[
+  {label:'p90',data:sim.p90,borderWidth:0,pointRadius:0,backgroundColor:'rgba(84,73,221,.12)',fill:'+1'},
+  {label:'p10',data:sim.p10,borderWidth:0,pointRadius:0},
+  {label:'Base',data:base,borderColor:'#A79EF0',borderDash:[5,4],pointRadius:0,borderWidth:2},
+  {label:'Escenario',data:esc,borderColor:'#3B2FC9',pointRadius:0,borderWidth:2.5}]};
+ const opts={responsive:true,animation:false,plugins:{legend:{display:false},tooltip:{filter:i=>i.datasetIndex>1,callbacks:{label:c=>c.dataset.label+': '+fmtA(c.parsed.y)}}},scales:{x:{ticks:{maxTicksLimit:10,color:'#7A7398'},grid:{display:false}},y:{ticks:{color:'#7A7398',callback:v=>'$'+(v/1e6).toFixed(0)+'M'},grid:{color:'#ECE8F6'}}}};
+ if(chS)chS.destroy();chS=new Chart(document.getElementById('chS'),{type:'line',data,options:opts});
+}
+['sShock','sDelay','sCut'].forEach(id=>document.getElementById(id).addEventListener('input',renderScen));
+
+// ---------- datos ----------
+const fields=[['iEmp','emp',0],['iCajaArs','cajaArs',1],['iCajaUsd','cajaUsd',1],['iTc','tc',1],['iDev','dev',1],['iMinS','minS',1]];
+function fillForm(){
+ fields.forEach(([id,k])=>document.getElementById(id).value=S[k]);
+ mov.innerHTML=S.mov.map((m,i)=>`<tr data-i="${i}">
+ <td><select data-k="tipo">${['cobro','pago','impuesto'].map(x=>`<option${x===m.tipo?' selected':''}>${x}</option>`).join('')}</select></td>
+ <td><input data-k="concepto" value="${m.concepto}"></td>
+ <td><input data-k="monto" type="number" value="${m.monto}"></td>
+ <td><select data-k="moneda">${['ARS','USD'].map(x=>`<option${x===m.moneda?' selected':''}>${x}</option>`).join('')}</select></td>
+ <td><input data-k="fecha" type="date" value="${m.fecha}"></td>
+ <td><input data-k="punt" type="number" min="0" max="100" value="${m.punt}" ${m.tipo!=='cobro'?'disabled':''}></td>
+ <td><button class="btn x" data-del="${i}">✕</button></td></tr>`).join('');
+}
+fields.forEach(([id,k,num])=>document.getElementById(id).addEventListener('change',e=>{S[k]=num?+e.target.value:e.target.value;save();render()}));
+mov.addEventListener('change',e=>{const tr=e.target.closest('tr'),k=e.target.dataset.k;if(!tr||!k)return;const m=S.mov[+tr.dataset.i];m[k]=(k==='monto'||k==='punt')?+e.target.value:e.target.value;save();fillForm();render()});
+mov.addEventListener('click',e=>{if(e.target.dataset.del!==undefined){S.mov.splice(+e.target.dataset.del,1);save();fillForm();render()}});
+add.onclick=()=>{S.mov.push({tipo:'cobro',concepto:'Nuevo movimiento',monto:0,moneda:'ARS',fecha:addD(7),punt:80});save();fillForm();render()};
+bDemo.onclick=()=>{S=window.demoData();save();fillForm();render();fileMsg.textContent='Se restauraron los datos de ejemplo.'};
+window.demoData=demo;
+tpl.onclick=()=>{const rows=['tipo,concepto,monto,moneda,fecha,puntualidad',...S.mov.map(m=>[m.tipo,m.concepto,m.monto,m.moneda,m.fecha,m.punt].join(','))];const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='plantilla-tip.csv';a.click()};
+file.onchange=async e=>{
+ const f=e.target.files[0];if(!f)return;const txt=await f.text();
+ const lines=txt.trim().split(/\r?\n/);const sep=lines[0].includes(';')?';':',';
+ const hd=lines[0].toLowerCase().split(sep).map(s=>s.trim());const ix=k=>hd.indexOf(k);
+ if(['tipo','concepto','monto','moneda','fecha'].some(k=>ix(k)<0)){fileMsg.textContent='Faltan columnas. Usá la plantilla.';return}
+ const out=[];let bad=0;
+ for(const l of lines.slice(1)){const c=l.split(sep).map(s=>s.trim());const m={tipo:c[ix('tipo')].toLowerCase(),concepto:c[ix('concepto')],monto:+String(c[ix('monto')]).replace(/\./g,'').replace(',','.'),moneda:(c[ix('moneda')]||'ARS').toUpperCase(),fecha:c[ix('fecha')],punt:ix('puntualidad')>=0?(+c[ix('puntualidad')]||''):''};
+  if(!['cobro','pago','impuesto'].includes(m.tipo)||!(m.monto>0)||!/^\d{4}-\d{2}-\d{2}$/.test(m.fecha)){bad++;continue}out.push(m)}
+ if(!out.length){fileMsg.textContent='No se pudo leer ningún movimiento.';return}
+ S.mov=out;save();fillForm();render();fileMsg.textContent=`Se cargaron ${out.length} movimientos${bad?` (${bad} filas con errores se omitieron)`:''}.`;
+};
+
+// ---------- navegación ----------
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+ document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id===b.dataset.v));
+ if(b.dataset.v==='escenarios')renderScen();
+});
+fillForm();render();
+</script>
+</body>
+</html>

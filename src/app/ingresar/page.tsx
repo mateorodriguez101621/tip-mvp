@@ -16,7 +16,8 @@ export default async function Ingresar() {
       <div className="tarjeta p-6">
         <h1 className="titulo mb-1 text-xl">Tu tesorería, semanas antes</h1>
         <p className="mb-5 text-[13px] text-apagado">
-          TIP proyecta tu caja a 90 días, te avisa si te va a faltar plata para pagarle a tus proveedores y te dice qué hacer.
+          TIP proyecta tu caja de forma continua y te avisa con semanas de anticipación si te va a faltar o sobrar plata,
+          con recomendaciones concretas. Además, probá escenarios y mirá la probabilidad de quedarte sin caja.
         </p>
         <FormularioIngreso />
       </div>

@@ -4,6 +4,16 @@ Copiloto de tesorería para PyMEs argentinas importadoras: proyecta el flujo de 
 
 MVP para la materia **Desarrollo de Nuevos Negocios** (2026).
 
+**Demo publicada:** https://tip-app-sigma.vercel.app (proyecto `tip-app` en Vercel, se actualiza con cada push a `main`).
+
+### Probarla en 2 minutos
+
+1. Entrá al link → **Crear cuenta** con cualquier email y una contraseña de 6+ caracteres.
+2. En "Contanos de tu empresa" tocá **Cargar datos de ejemplo**.
+3. **Panel**: el faltante en rojo ("En 40 días te van a faltar USD…") y qué hacer, con el porqué.
+4. **Escenarios**: subí "El dólar salta hoy" y mirá cómo cambia la probabilidad de quedarte sin caja.
+5. **Datos**: cargá un movimiento a mano o subí la plantilla de Excel.
+
 ## Qué hace
 
 - **Login** con email y contraseña. Una empresa por usuario, con sus supuestos: caja en ARS y USD, tipo de cambio, devaluación mensual esperada y saldo mínimo de seguridad.

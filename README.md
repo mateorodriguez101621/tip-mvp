@@ -13,6 +13,7 @@ MVP para la materia **Desarrollo de Nuevos Negocios** (2026).
 3. **Panel**: el faltante en rojo ("En 40 días te van a faltar USD…") y qué hacer, con el porqué.
 4. **Escenarios**: subí "El dólar salta hoy" y mirá cómo cambia la probabilidad de quedarte sin caja.
 5. **Datos**: cargá un movimiento a mano o subí la plantilla de Excel.
+6. **Noticias**: mirá los indicadores del día y tocá "Usar $… en mi proyección" para llevar el dólar mayorista a tus supuestos.
 
 ## Qué hace
 
@@ -22,6 +23,7 @@ MVP para la materia **Desarrollo de Nuevos Negocios** (2026).
 - **Alertas**: faltante ("En X días te van a faltar USD Y para tu pago a Z"), saldo por debajo del mínimo y excedente ocioso a 30 días (solo si no hay faltante).
 - **Recomendaciones con el porqué**: adelantar cobros de clientes con puntualidad ≥ 80% (total o parcialmente, primero los que vencen más cerca), crédito planificado por el resto, y plazo fijo o LECAP para el excedente.
 - **Escenarios "¿y si…?"**: salto del dólar, demora de clientes y caída de la cobranza, contra la proyección base, con la probabilidad de quedarse sin caja calculada con 1.000 simulaciones y la banda entre el 10% y el 90%.
+- **Noticias del día**: dólar mayorista y MEP, riesgo país, inflación y la mejor tasa de plazo fijo, más los titulares de las últimas 48 horas sobre importaciones, dólar y BCRA, impuestos, tasas y actividad. Los titulares salen de los RSS de Ámbito, Infobae, La Nación, iProfesional y Clarín, se filtran por tema y no se repiten entre medios. El bloque "Qué significa para tu empresa" los cruza con la proyección: avisa si el tipo de cambio cargado quedó viejo y deja actualizarlo con un clic, calcula cuánto más costarían los pagos en dólares si sube 10% y sugiere el mejor plazo fijo si hay excedente.
 - **Datos de ejemplo**: una importadora de seguridad electrónica ficticia, para la demo.
 
 ## Cómo correrlo
@@ -82,6 +84,11 @@ src/lib/tesoreria/      Lógica pura (sin React ni Supabase), 100% testeable
   validacion.ts         Validación compartida por formularios y servidor
   fuentes.ts            Interfaz para enchufar ARCA, bancos o Tango en la v1
   demo.ts               Importadora de ejemplo
+src/lib/noticias/       Noticias e indicadores del día
+  rss.ts                Lectura de feeds RSS en texto plano
+  clasificacion.ts      Temas, filtros y notas repetidas entre medios
+  indicadores.ts        Dólar, riesgo país, inflación y plazo fijo (APIs públicas)
+  obtener.ts            Pide todo en el servidor, con caché de 15 min a 6 h
 src/lib/persistencia/   Dónde se guardan los datos: navegador (modo local) o Supabase
 src/lib/supabase/       Clientes de Supabase y lectura de datos (solo servidor)
 src/app/acciones.ts     Server Actions: validan de nuevo y escriben en la base
@@ -105,7 +112,8 @@ referencia/             El MVP estático original (index.html)
 - **Puntualidad calculada** desde el historial real de cobros, en vez de cargada a mano.
 - **Avisos proactivos** por WhatsApp o mail cuando aparece un faltante (hoy la alerta se ve al entrar).
 - **Proyección automática diaria** en el servidor (cron) y registro histórico de proyecciones para medir la precisión.
-- **Tipo de cambio real** (oficial/MEP) y curva de devaluación de mercado en vez de un supuesto fijo.
+- **Curva de devaluación de mercado** en vez de un supuesto fijo (el tipo de cambio del día ya se puede tomar del mayorista desde Noticias).
+- **Noticias resumidas con IA** y alertas cuando sale una noticia que afecta un pago cargado (por ejemplo, un cambio de arancel para lo que importa la empresa).
 - **Impuestos estimados** a partir de las ventas y compras (débito/crédito fiscal), no solo cargados.
 - **Tasas reales** de crédito, plazo fijo y LECAP para comparar el costo de cada recomendación.
 - **Varias empresas por usuario** y usuarios invitados (contador, socio), con roles.

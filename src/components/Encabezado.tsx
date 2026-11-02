@@ -8,6 +8,7 @@ const SECCIONES = [
   { href: "/panel", texto: "Panel" },
   { href: "/datos", texto: "Datos" },
   { href: "/escenarios", texto: "Escenarios" },
+  { href: "/noticias", texto: "Noticias" },
 ];
 
 export function Marca() {

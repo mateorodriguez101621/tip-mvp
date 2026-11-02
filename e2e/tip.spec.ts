@@ -158,10 +158,27 @@ test.describe("escritorio", () => {
     await page.getByRole("slider", { name: /El dólar salta hoy/ }).fill("40");
     await expect(page.getByText(/Tu peor saldo empeora/)).toBeVisible();
   });
+
+  // Depende de fuentes externas: si no responden, la página igual tiene que mostrarse.
+  test("noticias: se muestran y el tipo de cambio se actualiza con un clic", async ({ page }) => {
+    await conDatos(page, []);
+    await page.goto("/panel");
+    await page.getByRole("link", { name: "Noticias" }).click();
+    await expect(page.getByRole("heading", { name: "Noticias del día" })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId("noticias").or(page.getByTestId("sin-noticias"))).toBeVisible();
+
+    const desactualizado = page.getByTestId("tc-desactualizado");
+    if (await desactualizado.isVisible()) {
+      await desactualizado.getByRole("button", { name: /en mi proyección/ }).click();
+      await expect(desactualizado).toBeHidden();
+      const tc = await page.evaluate((c) => JSON.parse(localStorage.getItem(c) ?? "null")?.empresa.tipoCambio, CLAVE);
+      expect(tc).not.toBe(EMPRESA.tipoCambio);
+    }
+  });
 });
 
-test("@celular las tres pantallas entran en 375 px sin scroll horizontal", async ({ page }) => {
-  for (const ruta of ["/panel", "/datos", "/escenarios"]) {
+test("@celular las cuatro pantallas entran en 375 px sin scroll horizontal", async ({ page }) => {
+  for (const ruta of ["/panel", "/datos", "/escenarios", "/noticias"]) {
     await page.goto(ruta);
     await expect(page.locator("main section").first()).toBeVisible();
     const ancho = await page.evaluate(() => document.documentElement.scrollWidth);

@@ -37,7 +37,7 @@ export function VistaDatos() {
         <div className="tarjeta">
           <h2 className="subtitulo">Empresa y supuestos</h2>
           {/* key: si se cargan los datos de ejemplo, el formulario se reinicia con los valores nuevos */}
-          <FormularioEmpresa key={JSON.stringify(datos.empresa)} inicial={datos.empresa} conAjustes onGuardar={guardarEmpresa} />
+          <FormularioEmpresa key={JSON.stringify(datos.empresa)} inicial={datos.empresa} onGuardar={guardarEmpresa} />
         </div>
         <div className="tarjeta flex flex-col gap-4">
           <div>

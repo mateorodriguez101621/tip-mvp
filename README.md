@@ -17,7 +17,7 @@ MVP para la materia **Desarrollo de Nuevos Negocios** (2026).
 
 ## Qué hace
 
-- **Login** con email y contraseña. Una empresa por usuario, con sus supuestos: caja en ARS y USD, tipo de cambio y saldo mínimo de seguridad. La suba mensual del dólar la estima TIP (2%) y solo se cambia desde "Ajustes avanzados".
+- **Login** con email y contraseña. Una empresa por usuario, con sus supuestos: caja en ARS y USD, tipo de cambio y saldo mínimo de seguridad. La suba mensual del dólar no se pide: TIP usa 2% como tendencia de base, y los saltos del dólar se prueban en **Escenarios**.
 - **Registro automático**: conectores para el sistema de gestión (Tango, Xubio o Colppy), ARCA y el banco que cargan solos facturas a cobrar y a pagar, despachos de importación, vencimientos de IVA e Ingresos Brutos y débitos automáticos. Sincronizar dos veces no duplica. En el MVP las fuentes están simuladas (`src/lib/tesoreria/conectores.ts`) sobre la misma interfaz que usarán las APIs reales.
 - **Movimientos**: cobros, pagos e impuestos en ARS o USD, con la puntualidad histórica de cada cliente. Se cargan a mano o desde un CSV/Excel con plantilla descargable; las filas con errores se informan una por una.
 - **Proyección diaria a 90 días** en pesos. Los pagos en dólares se convierten al tipo de cambio proyectado de cada fecha y la zona negativa se marca en rojo. Los movimientos con fecha pasada se toman como vencidos y se proyectan para hoy.

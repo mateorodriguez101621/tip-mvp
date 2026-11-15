@@ -12,17 +12,19 @@ MVP para la materia **Desarrollo de Nuevos Negocios** (2026).
 2. En "Contanos de tu empresa" tocá **Cargar datos de ejemplo**.
 3. **Panel**: el faltante en rojo ("En 40 días te van a faltar USD…") y qué hacer, con el porqué.
 4. **Escenarios**: subí "El dólar salta hoy" y mirá cómo cambia la probabilidad de quedarte sin caja.
-5. **Datos**: cargá un movimiento a mano o subí la plantilla de Excel.
-6. **Noticias**: mirá los indicadores del día y tocá "Usar $… en mi proyección" para llevar el dólar mayorista a tus supuestos.
+5. **Datos**: en **Registro automático** tocá **Conectar** en Tango, ARCA y Banco para que TIP cargue los movimientos solo, o cargá uno a mano o con la plantilla de Excel.
+6. **Noticias**: elegí tu rubro para ver primero las noticias que lo afectan, mirá los indicadores del día y tocá "Usar $… en mi proyección" para llevar el dólar mayorista a tus supuestos.
 
 ## Qué hace
 
-- **Login** con email y contraseña. Una empresa por usuario, con sus supuestos: caja en ARS y USD, tipo de cambio, devaluación mensual esperada y saldo mínimo de seguridad.
+- **Login** con email y contraseña. Una empresa por usuario, con sus supuestos: caja en ARS y USD, tipo de cambio y saldo mínimo de seguridad. La suba mensual del dólar la estima TIP (2%) y solo se cambia desde "Ajustes avanzados".
+- **Registro automático**: conectores para el sistema de gestión (Tango, Xubio o Colppy), ARCA y el banco que cargan solos facturas a cobrar y a pagar, despachos de importación, vencimientos de IVA e Ingresos Brutos y débitos automáticos. Sincronizar dos veces no duplica. En el MVP las fuentes están simuladas (`src/lib/tesoreria/conectores.ts`) sobre la misma interfaz que usarán las APIs reales.
 - **Movimientos**: cobros, pagos e impuestos en ARS o USD, con la puntualidad histórica de cada cliente. Se cargan a mano o desde un CSV/Excel con plantilla descargable; las filas con errores se informan una por una.
 - **Proyección diaria a 90 días** en pesos. Los pagos en dólares se convierten al tipo de cambio proyectado de cada fecha y la zona negativa se marca en rojo. Los movimientos con fecha pasada se toman como vencidos y se proyectan para hoy.
 - **Alertas**: faltante ("En X días te van a faltar USD Y para tu pago a Z"), saldo por debajo del mínimo y excedente ocioso a 30 días (solo si no hay faltante).
 - **Recomendaciones con el porqué**: adelantar cobros de clientes con puntualidad ≥ 80% (total o parcialmente, primero los que vencen más cerca), crédito planificado por el resto, y plazo fijo o LECAP para el excedente.
 - **Escenarios "¿y si…?"**: salto del dólar, demora de clientes y caída de la cobranza, contra la proyección base, con la probabilidad de quedarse sin caja calculada con 1.000 simulaciones y la banda entre el 10% y el 90%.
+- **Noticias por rubro**: seis rubros (tecnología y seguridad electrónica, autopartes, textil, alimentos, maquinaria, salud). Al elegir uno, TIP busca en Google Noticias y en los medios las notas de los últimos 7 días que lo nombran, las ordena por relevancia y recuerda la elección.
 - **Noticias del día**: dólar mayorista y MEP, riesgo país, inflación y la mejor tasa de plazo fijo, más los titulares de las últimas 48 horas sobre importaciones, dólar y BCRA, impuestos, tasas y actividad. Los titulares salen de los RSS de Ámbito, Infobae, La Nación, iProfesional y Clarín, se filtran por tema y no se repiten entre medios. El bloque "Qué significa para tu empresa" los cruza con la proyección: avisa si el tipo de cambio cargado quedó viejo y deja actualizarlo con un clic, calcula cuánto más costarían los pagos en dólares si sube 10% y sugiere el mejor plazo fijo si hay excedente.
 - **Datos de ejemplo**: una importadora de seguridad electrónica ficticia, para la demo.
 

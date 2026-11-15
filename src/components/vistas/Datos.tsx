@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { BotonEjemplo } from "@/components/BotonEjemplo";
 import { Cargando } from "@/components/Cargando";
+import { Conexiones } from "@/components/Conexiones";
 import { useDatos } from "@/components/DatosProvider";
 import { FormularioEmpresa } from "@/components/FormularioEmpresa";
 import { FormularioMovimiento } from "@/components/FormularioMovimiento";
@@ -31,11 +32,12 @@ export function VistaDatos() {
 
   return (
     <section className="flex flex-col gap-3.5">
+      <Conexiones />
       <div className="grid gap-3.5 lg:grid-cols-2">
         <div className="tarjeta">
           <h2 className="subtitulo">Empresa y supuestos</h2>
           {/* key: si se cargan los datos de ejemplo, el formulario se reinicia con los valores nuevos */}
-          <FormularioEmpresa key={JSON.stringify(datos.empresa)} inicial={datos.empresa} onGuardar={guardarEmpresa} />
+          <FormularioEmpresa key={JSON.stringify(datos.empresa)} inicial={datos.empresa} conAjustes onGuardar={guardarEmpresa} />
         </div>
         <div className="tarjeta flex flex-col gap-4">
           <div>

@@ -1,5 +1,7 @@
 // Tipos de la sección Noticias. Este módulo no depende de React ni de Next.
 
+import type { IdRubro, NoticiaRubro } from "./rubros";
+
 export type Categoria = "importaciones" | "dolar" | "impuestos" | "tasas" | "actividad";
 
 export interface Noticia {
@@ -43,6 +45,8 @@ export interface ContextoDelDia {
   indicadores: Indicadores;
   /** Medios o indicadores que no respondieron. */
   sinRespuesta: string[];
+  /** Noticias del rubro elegido por el usuario, o null si todavía no eligió. */
+  rubro: { id: IdRubro; noticias: NoticiaRubro[] } | null;
   /** Momento en que se armó la página, ISO 8601. */
   generado: string;
 }

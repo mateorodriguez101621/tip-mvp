@@ -6,7 +6,7 @@ import {
   plantillaCSV,
   validarFilas,
 } from "../importacion";
-import { validarEmpresa, validarMovimiento } from "../validacion";
+import { DEVALUACION_POR_DEFECTO, validarEmpresa, validarMovimiento } from "../validacion";
 
 const ID = "3f6c2a10-1b2c-4d5e-8f90-123456789abc";
 
@@ -121,11 +121,18 @@ describe("validación de formularios", () => {
   it("formulario de empresa vacío", () => {
     const v = validarEmpresa({});
     expect(v.ok).toBe(false);
-    if (!v.ok) expect(Object.keys(v.errores).sort()).toEqual(["cajaArs", "cajaUsd", "devaluacionMensual", "nombre", "saldoMinimo", "tipoCambio"]);
+    if (!v.ok) expect(Object.keys(v.errores).sort()).toEqual(["cajaArs", "cajaUsd", "nombre", "saldoMinimo", "tipoCambio"]);
   });
 
   it("empresa válida con caja en cero", () => {
     const v = validarEmpresa({ nombre: "Delta", cajaArs: "0", cajaUsd: 0, tipoCambio: "1450", devaluacionMensual: "2,5", saldoMinimo: 0 });
     expect(v).toEqual({ ok: true, valor: { nombre: "Delta", cajaArs: 0, cajaUsd: 0, tipoCambio: 1450, devaluacionMensual: 2.5, saldoMinimo: 0 } });
+  });
+
+  it("sin suba del dólar cargada usa la estimación de TIP", () => {
+    const v = validarEmpresa({ nombre: "Delta", cajaArs: 0, cajaUsd: 0, tipoCambio: 1450, devaluacionMensual: "", saldoMinimo: 0 });
+    expect(v.ok && v.valor.devaluacionMensual).toBe(DEVALUACION_POR_DEFECTO);
+    const sinCampo = validarEmpresa({ nombre: "Delta", cajaArs: 0, cajaUsd: 0, tipoCambio: 1450, saldoMinimo: 0 });
+    expect(sinCampo.ok && sinCampo.valor.devaluacionMensual).toBe(DEVALUACION_POR_DEFECTO);
   });
 });

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { useDatos } from "@/components/DatosProvider";
 import { CATEGORIAS, ORDEN, VENTANA_HORAS } from "@/lib/noticias/clasificacion";
 import { diferencia } from "@/lib/noticias/indicadores";
+import { RUBROS, VENTANA_RUBRO_DIAS, esRubro, rubroPorId, type IdRubro, type NoticiaRubro } from "@/lib/noticias/rubros";
 import type { Categoria, ContextoDelDia, Indicadores, NoticiaClasificada } from "@/lib/noticias/tipos";
 import { fechaCorta } from "@/lib/tesoreria/fechas";
 import { fmtARS, fmtUSD } from "@/lib/tesoreria/formato";
@@ -229,18 +231,128 @@ function ListaNoticias({ noticias, generado }: { noticias: NoticiaClasificada[];
   );
 }
 
-export function VistaNoticias({ noticias, indicadores, sinRespuesta, generado }: ContextoDelDia) {
+const CLAVE_RUBRO = "tip-rubro";
+
+const ICONOS: Record<IdRubro, ReactNode> = {
+  tecnologia: <path d="M4 5h16v10H4zM2 19h20M9 15v4M15 15v4" />,
+  autopartes: <path d="M5 16l1.5-5A2 2 0 0 1 8.4 9.5h7.2a2 2 0 0 1 1.9 1.5L19 16M3 16h18v3H3zM7 19v1M17 19v1" />,
+  textil: <path d="M8 3l-5 3 2 4 2-1v12h10V9l2 1 2-4-5-3a4 4 0 0 1-8 0z" />,
+  alimentos: <path d="M7 3v8a3 3 0 0 0 6 0V3M10 3v18M17 3c-2 2-2 6 0 8v10" />,
+  maquinaria: <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />,
+  salud: <path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z" />,
+};
+
+/** Seis rubros: el usuario toca el suyo y la página trae las noticias que más lo afectan. */
+function SelectorRubro({ actual }: { actual: IdRubro | null }) {
+  const router = useRouter();
+  const [pendiente, iniciar] = useTransition();
+  const [elegido, setElegido] = useState<IdRubro | null>(actual);
+
+  // Si ya eligió un rubro en otra visita y entró sin ?rubro=, lo recupera.
+  useEffect(() => {
+    if (actual) return;
+    try {
+      const guardado = localStorage.getItem(CLAVE_RUBRO);
+      if (esRubro(guardado)) router.replace(`/noticias?rubro=${guardado}`, { scroll: false });
+    } catch {}
+  }, [actual, router]);
+
+  function elegir(id: IdRubro | null) {
+    setElegido(id);
+    try {
+      if (id) localStorage.setItem(CLAVE_RUBRO, id);
+      else localStorage.removeItem(CLAVE_RUBRO);
+    } catch {}
+    iniciar(() => router.push(id ? `/noticias?rubro=${id}` : "/noticias", { scroll: false }));
+  }
+
+  return (
+    <div className="tarjeta" data-testid="rubros">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="subtitulo mb-0">¿En qué rubro está tu empresa?</h2>
+        {elegido && (
+          <button type="button" className="btn btn-texto text-xs" onClick={() => elegir(null)}>
+            Ver sin rubro
+          </button>
+        )}
+      </div>
+      <p className="mt-1 mb-3 text-[13px] text-apagado">Elegí el tuyo y te mostramos primero las noticias que más lo afectan.</p>
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6" role="group" aria-label="Rubro">
+        {RUBROS.map((r) => {
+          const activo = elegido === r.id;
+          return (
+            <button
+              key={r.id}
+              type="button"
+              aria-pressed={activo}
+              disabled={pendiente && activo}
+              onClick={() => elegir(r.id)}
+              className={`flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition-colors ${
+                activo ? "border-violeta bg-violeta text-white" : "border-linea bg-white/70 hover:border-violeta hover:bg-lavanda"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={activo ? "text-white" : "text-violeta"}>
+                {ICONOS[r.id]}
+              </svg>
+              <span className="text-[13px] font-semibold leading-tight">{r.nombre}</span>
+              <span className={`text-[11px] leading-snug ${activo ? "text-white/80" : "text-apagado"}`}>{r.ejemplos}</span>
+            </button>
+          );
+        })}
+      </div>
+      {pendiente && <p className="mt-2 text-[13px] text-apagado" role="status">Buscando las noticias del rubro…</p>}
+    </div>
+  );
+}
+
+function NoticiasDelRubro({ id, noticias, generado }: { id: IdRubro; noticias: NoticiaRubro[]; generado: string }) {
+  const r = rubroPorId(id);
+  return (
+    <div className="tarjeta mt-3.5 border-l-4 border-l-violeta" data-testid="noticias-rubro">
+      <h2 className="subtitulo">Lo más relevante para {r.nombre.toLowerCase()}</h2>
+      {noticias.length === 0 ? (
+        <p className="text-apagado">No encontramos noticias de tu rubro en los últimos {VENTANA_RUBRO_DIAS} días. Abajo están las generales del día.</p>
+      ) : (
+        <ul className="divide-y divide-linea">
+          {noticias.map((n) => (
+            <li key={n.enlace} className="py-3">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-apagado">
+                <span className="tag bg-violeta text-white">Tu rubro</span>
+                {n.categoria && <span className="tag">{CATEGORIAS[n.categoria].nombre}</span>}
+                <span>
+                  {n.fuente} · {hace(n.fecha, generado)}
+                </span>
+              </div>
+              <a href={n.enlace} target="_blank" rel="noopener noreferrer" className="mt-1 block font-semibold leading-snug hover:text-violeta hover:underline">
+                {n.titulo}
+              </a>
+              {n.resumen && !n.resumen.startsWith(n.titulo) && <p className="mt-0.5 line-clamp-2 text-[13px] text-apagado">{n.resumen}</p>}
+              {n.tambienEn.length > 0 && <p className="mt-0.5 text-xs text-apagado">También en {n.tambienEn.join(", ")}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+export function VistaNoticias({ noticias, indicadores, sinRespuesta, generado, rubro }: ContextoDelDia) {
   return (
     <section>
       <h1 className="titulo text-xl">Noticias del día</h1>
       <p className="mb-3 text-apagado">Lo que pasa con el dólar, las importaciones, los impuestos y las tasas, y qué significa para tu caja.</p>
 
-      <ListaIndicadores indicadores={indicadores} />
+      <SelectorRubro key={rubro?.id ?? "ninguno"} actual={rubro?.id ?? null} />
+      <div className="mt-3.5">
+        <ListaIndicadores indicadores={indicadores} />
+      </div>
       <ParaTuEmpresa indicadores={indicadores} />
+      {rubro && <NoticiasDelRubro id={rubro.id} noticias={rubro.noticias} generado={generado} />}
       <ListaNoticias noticias={noticias} generado={generado} />
 
       <p className="mt-3 text-xs text-apagado">
-        Titulares de Ámbito, Infobae, La Nación, iProfesional y Clarín, filtrados por tema; cada nota se abre en el sitio del
+        Titulares de Ámbito, Infobae, La Nación, iProfesional y Clarín, filtrados por tema
+        {rubro ? ", y de Google Noticias para tu rubro" : ""}; cada nota se abre en el sitio del
         medio. Cotizaciones de DolarApi; riesgo país, inflación y tasas de ArgentinaDatos. Se actualiza cada 30 minutos.
         {sinRespuesta.length > 0 && ` Ahora no pudimos leer: ${sinRespuesta.join(", ")}.`}
       </p>

@@ -2,6 +2,7 @@ import "server-only";
 import { seleccionarNoticias } from "./clasificacion";
 import { leerCotizaciones, leerInflacion, leerPlazoFijo, leerRiesgoPais } from "./indicadores";
 import { leerRss } from "./rss";
+import { rubroPorId, seleccionarParaRubro, separarMedio, urlGoogleNoticias, type IdRubro } from "./rubros";
 import type { ContextoDelDia, Indicadores } from "./tipos";
 
 // Los feeds de economía de cada medio: titulares y enlaces que los diarios publican para ser
@@ -50,11 +51,15 @@ async function intentar<T>(promesa: Promise<T>, nombre: string): Promise<T | nul
   }
 }
 
-/** Noticias e indicadores del día. Nunca falla: lo que no responde se informa en `sinRespuesta`. */
-export async function obtenerContextoDelDia(): Promise<ContextoDelDia> {
+/**
+ * Noticias e indicadores del día y, si se pasa un rubro, las noticias más relevantes para ese rubro.
+ * Nunca falla: lo que no responde se informa en `sinRespuesta`.
+ */
+export async function obtenerContextoDelDia(idRubro: IdRubro | null = null): Promise<ContextoDelDia> {
   const ahora = new Date();
+  const rubro = idRubro ? rubroPorId(idRubro) : null;
 
-  const [feeds, dolar, riesgo, inflacion, plazoFijo] = await Promise.all([
+  const [feeds, dolar, riesgo, inflacion, plazoFijo, delRubro] = await Promise.all([
     Promise.all(
       FEEDS.map((f) => intentar(traer(f.url, CADA_NOTICIAS).then(async (r) => leerRss(await r.text(), f.fuente)), f.url)),
     ),
@@ -62,6 +67,12 @@ export async function obtenerContextoDelDia(): Promise<ContextoDelDia> {
     intentar(json(API_RIESGO_PAIS, CADA_INDICES), "riesgo país"),
     intentar(json(API_INFLACION, CADA_INDICES), "inflación"),
     intentar(json(API_PLAZO_FIJO, CADA_INDICES), "plazo fijo"),
+    rubro
+      ? intentar(
+          traer(urlGoogleNoticias(rubro), CADA_NOTICIAS).then(async (r) => leerRss(await r.text(), "Google Noticias").map(separarMedio)),
+          `noticias de ${rubro.nombre}`,
+        )
+      : Promise.resolve(null),
   ]);
 
   // Un medio cuenta como caído solo si no respondió ninguno de sus feeds.
@@ -79,8 +90,13 @@ export async function obtenerContextoDelDia(): Promise<ContextoDelDia> {
   if (!indicadores.inflacion) sinRespuesta.add("inflación");
   if (!indicadores.plazoFijo) sinRespuesta.add("tasas de plazo fijo");
 
+  const generales = feeds.flatMap((f) => f ?? []);
+  if (rubro && !delRubro) sinRespuesta.add(`Google Noticias (${rubro.nombre})`);
+
   return {
-    noticias: seleccionarNoticias(feeds.flatMap((f) => f ?? []), ahora),
+    noticias: seleccionarNoticias(generales, ahora),
+    // Las del rubro salen de Google Noticias y también de los feeds generales que lo nombran.
+    rubro: rubro ? { id: rubro.id, noticias: seleccionarParaRubro([...(delRubro ?? []), ...generales], rubro, ahora) } : null,
     indicadores,
     sinRespuesta: [...sinRespuesta],
     generado: ahora.toISOString(),

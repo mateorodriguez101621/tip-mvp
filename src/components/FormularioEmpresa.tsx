@@ -4,7 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { Campo } from "@/components/Campo";
 import type { Resultado } from "@/lib/persistencia/tipos";
 import type { Empresa } from "@/lib/tesoreria/tipos";
-import { validarEmpresa, type Errores } from "@/lib/tesoreria/validacion";
+import { DEVALUACION_POR_DEFECTO, validarEmpresa, type Errores } from "@/lib/tesoreria/validacion";
 
 type Valores = Record<keyof Empresa, string>;
 
@@ -20,10 +20,13 @@ const aTexto = (e: Empresa | null): Valores => ({
 export function FormularioEmpresa({
   inicial,
   textoBoton = "Guardar supuestos",
+  conAjustes = false,
   onGuardar,
 }: {
   inicial: Empresa | null;
   textoBoton?: string;
+  /** Muestra los ajustes avanzados (suba del dólar). En el alta no se piden: TIP usa su estimación. */
+  conAjustes?: boolean;
   onGuardar: (e: Empresa) => Promise<Resultado>;
 }) {
   const [v, setV] = useState<Valores>(() => aTexto(inicial));
@@ -67,18 +70,33 @@ export function FormularioEmpresa({
         <Campo id="cajaArs" etiqueta="Caja hoy en pesos (ARS)" {...num} min={0} value={v.cajaArs} onChange={cambiar("cajaArs")} error={errores.cajaArs} />
         <Campo id="cajaUsd" etiqueta="Caja hoy en dólares (USD)" {...num} min={0} value={v.cajaUsd} onChange={cambiar("cajaUsd")} error={errores.cajaUsd} />
         <Campo id="tipoCambio" etiqueta="Tipo de cambio hoy (ARS por USD)" {...num} min={0} value={v.tipoCambio} onChange={cambiar("tipoCambio")} error={errores.tipoCambio} />
-        <Campo id="devaluacionMensual" etiqueta="Devaluación mensual esperada (%)" {...num} value={v.devaluacionMensual} onChange={cambiar("devaluacionMensual")} error={errores.devaluacionMensual} />
+        <Campo
+          id="saldoMinimo"
+          etiqueta="Saldo mínimo de seguridad (ARS)"
+          {...num}
+          min={0}
+          value={v.saldoMinimo}
+          onChange={cambiar("saldoMinimo")}
+          error={errores.saldoMinimo}
+          ayuda="Por debajo de este saldo te avisamos."
+        />
       </div>
-      <Campo
-        id="saldoMinimo"
-        etiqueta="Saldo mínimo de seguridad (ARS)"
-        {...num}
-        min={0}
-        value={v.saldoMinimo}
-        onChange={cambiar("saldoMinimo")}
-        error={errores.saldoMinimo}
-        ayuda="Por debajo de este saldo te avisamos."
-      />
+      {conAjustes && (
+        <details className="rounded-lg border border-linea px-3 py-2" open={!!errores.devaluacionMensual}>
+          <summary className="cursor-pointer text-[13px] font-semibold text-violeta-oscuro">Ajustes avanzados</summary>
+          <div className="mt-2.5">
+            <Campo
+              id="devaluacionMensual"
+              etiqueta="Suba del dólar por mes (%)"
+              {...num}
+              value={v.devaluacionMensual}
+              onChange={cambiar("devaluacionMensual")}
+              error={errores.devaluacionMensual}
+              ayuda={`TIP la estima sola (${DEVALUACION_POR_DEFECTO}% por mes). Cambiala solo si querés proyectar con otro supuesto.`}
+            />
+          </div>
+        </details>
+      )}
       <div className="flex items-center gap-3">
         <button className="btn" type="submit" disabled={guardando}>
           {guardando ? "Guardando…" : textoBoton}

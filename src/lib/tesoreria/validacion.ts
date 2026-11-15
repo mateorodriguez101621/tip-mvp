@@ -57,6 +57,9 @@ export function validarMovimiento(entrada: Record<string, unknown>): Validado<Mo
   };
 }
 
+/** Suba mensual del dólar que usa TIP si la empresa no carga la suya, en %. */
+export const DEVALUACION_POR_DEFECTO = 2;
+
 export function validarEmpresa(entrada: Record<string, unknown>): Validado<Empresa> {
   const errores: Errores<Empresa> = {};
   const nombre = String(entrada.nombre ?? "").trim();
@@ -64,7 +67,10 @@ export function validarEmpresa(entrada: Record<string, unknown>): Validado<Empre
   const cajaArs = n("cajaArs");
   const cajaUsd = n("cajaUsd");
   const tipoCambio = n("tipoCambio");
-  const devaluacionMensual = n("devaluacionMensual");
+  // La suba del dólar es un ajuste opcional: si no viene, TIP usa su estimación.
+  const devCruda = entrada.devaluacionMensual;
+  const devaluacionMensual =
+    devCruda === undefined || devCruda === null || String(devCruda).trim() === "" ? DEVALUACION_POR_DEFECTO : n("devaluacionMensual");
   const saldoMinimo = n("saldoMinimo");
 
   if (!nombre) errores.nombre = "Escribí el nombre de la empresa.";
@@ -79,7 +85,7 @@ export function validarEmpresa(entrada: Record<string, unknown>): Validado<Empre
   noNegativo("saldoMinimo", saldoMinimo, "el saldo mínimo (puede ser 0)");
   if (Number.isNaN(tipoCambio)) errores.tipoCambio = "Ingresá el tipo de cambio.";
   else if (!(tipoCambio > 0)) errores.tipoCambio = "Tiene que ser mayor a cero.";
-  if (Number.isNaN(devaluacionMensual)) errores.devaluacionMensual = "Ingresá la devaluación esperada (puede ser 0).";
+  if (Number.isNaN(devaluacionMensual)) errores.devaluacionMensual = "Ingresá un número (puede ser 0).";
   else if (devaluacionMensual < -50 || devaluacionMensual > 100) errores.devaluacionMensual = "Usá un valor entre −50% y 100%.";
 
   if (Object.keys(errores).length) return { ok: false, errores };

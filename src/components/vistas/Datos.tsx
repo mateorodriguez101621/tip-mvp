@@ -8,6 +8,7 @@ import { useDatos } from "@/components/DatosProvider";
 import { FormularioEmpresa } from "@/components/FormularioEmpresa";
 import { FormularioMovimiento } from "@/components/FormularioMovimiento";
 import { Importador } from "@/components/Importador";
+import { NuevaImportacion } from "@/components/NuevaImportacion";
 import { TagTipo } from "@/components/vistas/Panel";
 import { fechaCorta } from "@/lib/tesoreria/fechas";
 import { fmtMonto } from "@/lib/tesoreria/formato";
@@ -33,6 +34,7 @@ export function VistaDatos() {
   return (
     <section className="flex flex-col gap-3.5">
       <Conexiones />
+      <NuevaImportacion />
       <div className="grid gap-3.5 lg:grid-cols-2">
         <div className="tarjeta">
           <h2 className="subtitulo">Empresa y supuestos</h2>

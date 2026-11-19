@@ -5,6 +5,7 @@ import {
   recomendarParaFaltante,
   type Recomendacion,
 } from "./recomendaciones";
+import { esEstimado } from "./recurrentes";
 import type { Movimiento, Supuestos, TipoMovimiento } from "./tipos";
 
 /** El déficit es el peor saldo en esta cantidad de días desde el primer faltante. */
@@ -51,7 +52,8 @@ export function generarAlertas(
       deficitArs,
       deficitUsd: deficitArs / tc,
       pago: pago && { concepto: pago.concepto, tipo: pago.tipo },
-      recomendaciones: recomendarParaFaltante(movimientos, hoy, t0, deficitArs, tc),
+      // Solo se sugiere adelantar cobros que la empresa cargó, no los estimados.
+      recomendaciones: recomendarParaFaltante(movimientos.filter((m) => !esEstimado(m)), hoy, t0, deficitArs, tc),
     });
   } else {
     alertas.push({ tipo: "sin-faltante" });

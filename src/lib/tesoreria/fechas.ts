@@ -36,6 +36,15 @@ export function sumarDias(iso: string, dias: number): string {
   return new Date(aUTC(iso) + dias * DIA_MS).toISOString().slice(0, 10);
 }
 
+/** Suma meses manteniendo el día; si el mes es más corto, cae el último día (31/1 + 1 mes = 28/2). */
+export function sumarMeses(iso: string, meses: number): string {
+  const [a, m, d] = iso.split("-").map(Number);
+  const destino = new Date(Date.UTC(a, m - 1 + meses, 1));
+  const ultimo = new Date(Date.UTC(destino.getUTCFullYear(), destino.getUTCMonth() + 1, 0)).getUTCDate();
+  destino.setUTCDate(Math.min(d, ultimo));
+  return destino.toISOString().slice(0, 10);
+}
+
 /** "d/m", para ejes y tablas. */
 export function fechaCorta(iso: string): string {
   const [, m, d] = iso.split("-").map(Number);

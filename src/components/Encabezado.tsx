@@ -15,10 +15,10 @@ export function Marca() {
   return (
     <div className="flex items-center gap-2.5">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/logo.svg" alt="" width={38} height={38} />
+      <img src="/logo.svg" alt="" width={36} height={36} />
       <div>
-        <b className="block text-[26px] leading-none tracking-tight text-violeta">TIP</b>
-        <span className="block text-xs italic text-apagado">Tesorería inteligente para PyMEs</span>
+        <b className="block text-[22px] leading-none font-bold tracking-tight text-violeta">TIP</b>
+        <span className="block text-[11px] text-apagado">Tesorería inteligente para PyMEs</span>
       </div>
     </div>
   );
@@ -27,10 +27,13 @@ export function Marca() {
 export function Encabezado({ derecha }: { derecha?: ReactNode }) {
   const ruta = usePathname();
   return (
-    <header className="mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-7">
-      <Marca />
-      <div className="order-3 flex w-full items-center justify-between gap-2 sm:order-none sm:w-auto">
-        <nav className="flex gap-1.5" aria-label="Secciones">
+    <header className="sticky top-0 z-20 mb-4 border-b border-white/60 bg-[#f5f2fb]/75 backdrop-blur-md">
+      <div className="mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5">
+        <Marca />
+        <nav
+          className="order-3 flex w-full gap-1 overflow-x-auto rounded-full border border-linea bg-white/80 p-1 shadow-sm sm:order-none sm:w-auto"
+          aria-label="Secciones"
+        >
           {SECCIONES.map((s) => {
             const activa = ruta.startsWith(s.href);
             return (
@@ -38,8 +41,8 @@ export function Encabezado({ derecha }: { derecha?: ReactNode }) {
                 key={s.href}
                 href={s.href}
                 aria-current={activa ? "page" : undefined}
-                className={`rounded-full px-3.5 py-2 font-semibold transition-colors ${
-                  activa ? "bg-violeta text-white" : "text-apagado hover:bg-white/60"
+                className={`flex-1 rounded-full px-2.5 py-1.5 text-center font-semibold whitespace-nowrap transition-colors sm:flex-none sm:px-3.5 ${
+                  activa ? "bg-violeta text-white shadow-sm" : "text-apagado hover:bg-lavanda hover:text-violeta-oscuro"
                 }`}
               >
                 {s.texto}
@@ -47,8 +50,8 @@ export function Encabezado({ derecha }: { derecha?: ReactNode }) {
             );
           })}
         </nav>
+        {derecha && <div className="flex items-center gap-2">{derecha}</div>}
       </div>
-      {derecha && <div className="flex items-center gap-2">{derecha}</div>}
     </header>
   );
 }

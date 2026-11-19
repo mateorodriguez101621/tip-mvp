@@ -3,7 +3,7 @@ import { textoRecomendacion, tituloAlerta, type Alerta } from "@/lib/tesoreria/a
 const ESTILO: Record<Alerta["tipo"], { clase: string; tag: string; tagClase: string }> = {
   faltante: { clase: "alerta", tag: "Faltante", tagClase: "tag tag-rojo" },
   "sin-faltante": { clase: "alerta alerta-ok", tag: "Sin faltantes", tagClase: "tag tag-verde" },
-  "bajo-minimo": { clase: "alerta alerta-info", tag: "Atención", tagClase: "tag tag-ambar" },
+  "bajo-minimo": { clase: "alerta alerta-ambar", tag: "Atención", tagClase: "tag tag-ambar" },
   excedente: { clase: "alerta alerta-info", tag: "Excedente", tagClase: "tag tag-verde" },
 };
 

@@ -120,7 +120,8 @@ describe("datos de ejemplo", () => {
     expect(a.alertas[0].tipo).toBe("faltante");
     expect(a.kpis.saldoMinimo).toBeLessThan(0);
     expect(a.kpis.pagosUsdComprometidos).toBe(72_000);
-    expect(a.kpis.impuestosArs).toBe(23_200_000);
+    // 23,2 M cargados + IVA e Ingresos Brutos de los meses siguientes, estimados como recurrentes.
+    expect(a.kpis.impuestosArs).toBe(23_200_000 + 2 * 3_200_000 + 10_500_000);
   });
 
   it("sin movimientos, el análisis no falla y no hay faltante", () => {

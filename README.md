@@ -22,9 +22,10 @@ MVP para la materia **Desarrollo de Nuevos Negocios** (2026).
 - **Nueva importación**: se carga la compra una sola vez (proveedor, FOB, anticipo, días de producción y tránsito, flete, derecho de importación y venta esperada) y TIP arma solo el anticipo, el saldo contra embarque, el flete, los tributos del despacho (derecho, tasa de estadística, IVA y percepciones, con tasas aproximadas) y el cobro de la venta, cada uno en su fecha. Los montos en USD se convierten con el dólar proyectado, así que los escenarios de salto del dólar también los mueven (`src/lib/tesoreria/ciclo.ts`).
 - **Movimientos**: cobros, pagos e impuestos en ARS o USD, con la puntualidad histórica de cada cliente. Se cargan a mano o desde un CSV/Excel con plantilla descargable; las filas con errores se informan una por una.
 - **Proyección diaria a 90 días** en pesos. Los pagos en dólares se convierten al tipo de cambio proyectado de cada fecha y la zona negativa se marca en rojo. Los movimientos con fecha pasada se toman como vencidos y se proyectan para hoy.
+- **Movimientos recurrentes estimados**: sueldos, alquileres, IVA, Ingresos Brutos y todo lo que se cargó más de una vez con una cadencia regular se repite hacia adelante hasta el horizonte (marcado como "estimado"). Así la proyección no queda plana después del último movimiento cargado ni se convierte en una línea recta a medida que todo vence (`src/lib/tesoreria/recurrentes.ts`). Los estimados no se guardan ni se recomiendan para adelantar cobros.
 - **Alertas**: faltante ("En X días te van a faltar USD Y para tu pago a Z"), saldo por debajo del mínimo y excedente ocioso a 30 días (solo si no hay faltante).
 - **Recomendaciones con el porqué**: adelantar cobros de clientes con puntualidad ≥ 80% (total o parcialmente, primero los que vencen más cerca), crédito planificado por el resto, y plazo fijo o LECAP para el excedente.
-- **Escenarios "¿y si…?"**: salto del dólar, demora de clientes y caída de la cobranza, contra la proyección base, con la probabilidad de quedarse sin caja calculada con 1.000 simulaciones y la banda entre el 10% y el 90%.
+- **Escenarios "¿y si…?"**: salto (o baja) del dólar, demora de clientes y caída de la cobranza, contra la proyección base, con la probabilidad de quedarse sin caja calculada con 1.000 simulaciones y la banda entre el 10% y el 90%. Como la probabilidad se queda en 100% cuando la base ya tiene un faltante, también se muestra la plata a cubrir (alcanza en 9 de cada 10 simulaciones) y los días sin caja, que sí cambian con cada escenario.
 - **Noticias por rubro**: seis rubros (tecnología y seguridad electrónica, autopartes, textil, alimentos, maquinaria, salud). Al elegir uno, TIP busca en Google Noticias y en los medios las notas de los últimos 7 días que lo nombran, las ordena por relevancia y recuerda la elección.
 - **Noticias del día**: dólar mayorista y MEP, riesgo país, inflación y la mejor tasa de plazo fijo, más los titulares de las últimas 48 horas sobre importaciones, dólar y BCRA, impuestos, tasas y actividad. Los titulares salen de los RSS de Ámbito, Infobae, La Nación, iProfesional y Clarín, se filtran por tema y no se repiten entre medios. El bloque "Qué significa para tu empresa" los cruza con la proyección: avisa si el tipo de cambio cargado quedó viejo y deja actualizarlo con un clic, calcula cuánto más costarían los pagos en dólares si sube 10% y sugiere el mejor plazo fijo si hay excedente.
 - **Datos de ejemplo**: una importadora de seguridad electrónica ficticia, para la demo.
@@ -80,6 +81,7 @@ npm run verificar:rls  # aislamiento entre usuarios contra el Supabase real
 ```
 src/lib/tesoreria/      Lógica pura (sin React ni Supabase), 100% testeable
   proyeccion.ts         Saldo diario, tipo de cambio proyectado, vencidos → día 0
+  recurrentes.ts        Repeticiones estimadas de sueldos, impuestos y lo que se repite
   alertas.ts            Faltante, bajo el mínimo, excedente + textos
   recomendaciones.ts    Adelantar cobros, crédito planificado, plazo fijo/LECAP
   simulacion.ts         Monte Carlo (1.000 corridas, semilla fija)
@@ -104,6 +106,8 @@ referencia/             El MVP estático original (index.html)
 
 ## Supuestos del modelo
 
+- Recurrentes: un concepto se repite si se cargó 2+ veces con un intervalo típico de 7 a 95 días (26 a 35 días = mensual, mismo día del mes), o si es un gasto mensual conocido (sueldos, alquiler, IVA, Ingresos Brutos, cargas sociales, honorarios…). Se proyecta con el monto del último cargado; las repeticiones que ya deberían haber pasado no se cuentan.
+
 - El déficit de un faltante es el peor saldo en los 15 días desde que el saldo se vuelve negativo.
 - Se sugiere adelantar cobros que vencen hasta 45 días después del faltante.
 - Hay excedente si el saldo mínimo de los próximos 30 días supera el doble del saldo de seguridad; se sugiere colocar lo que excede el mínimo.
@@ -121,4 +125,4 @@ referencia/             El MVP estático original (index.html)
 - **Tasas reales** de crédito, plazo fijo y LECAP para comparar el costo de cada recomendación.
 - **Varias empresas por usuario** y usuarios invitados (contador, socio), con roles.
 - **Recuperar contraseña**, magic link y confirmación de email.
-- Movimientos recurrentes (sueldos, alquileres) y edición en lote.
+- Movimientos recurrentes marcados a mano (hoy se detectan solos) y edición en lote.

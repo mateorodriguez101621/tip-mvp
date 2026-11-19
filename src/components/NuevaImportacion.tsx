@@ -53,7 +53,11 @@ export function NuevaImportacion() {
 
   const compra = useMemo(() => aCompra(t), [t]);
   const valida = Object.keys(validarCompra(compra)).length === 0;
-  const movs = useMemo(() => (valida ? movimientosDeCompra(compra) : []), [compra, valida]);
+  const todos = useMemo(() => (valida ? movimientosDeCompra(compra) : []), [compra, valida]);
+  // Lo que tiene fecha pasada ya se pagó (o cobró) y está en la caja: si se cargara, la
+  // proyección lo tomaría como vencido y lo descontaría otra vez hoy.
+  const movs = todos.filter((m) => m.fecha >= hoy);
+  const pasados = todos.length - movs.length;
   const trib = valida ? tributos(compra) : null;
   const fechas = valida ? fechasDelCiclo(compra) : null;
 
@@ -72,6 +76,10 @@ export function NuevaImportacion() {
     if (Object.keys(e).length) {
       setErrores(e);
       setAviso({ ok: false, texto: "Revisá los campos marcados." });
+      return;
+    }
+    if (movs.length === 0) {
+      setAviso({ ok: false, texto: "Todas las etapas de esta compra ya pasaron: no queda nada por proyectar." });
       return;
     }
     enviando.current = true;
@@ -123,19 +131,27 @@ export function NuevaImportacion() {
             </span>
           </div>
           <ul className="flex flex-col divide-y divide-linea text-[13px]">
-            {movs.map((m) => (
-              <li key={m.concepto} className="flex items-center justify-between gap-3 py-1.5">
+            {todos.map((m) => (
+              <li key={m.concepto} className={`flex items-center justify-between gap-3 py-1.5 ${m.fecha < hoy ? "opacity-50" : ""}`}>
                 <span className="min-w-0">
                   <span className="mr-2 tabular-nums text-apagado">{fechaCorta(m.fecha)}</span>
                   {m.concepto.split(" · ").at(-1)}
+                  {m.fecha < hoy && <span className="tag ml-2">ya pasó · no se carga</span>}
                 </span>
-                <span className={`shrink-0 tabular-nums font-semibold ${m.tipo === "cobro" ? "text-verde" : ""}`}>
+                <span className={`shrink-0 tabular-nums font-semibold ${m.tipo === "cobro" ? "text-verde" : ""} ${m.fecha < hoy ? "line-through" : ""}`}>
                   {m.tipo === "cobro" ? "+" : "−"} {fmtMonto(m.monto, m.moneda)}
                   {m.moneda === "USD" && <span className="ml-1 font-normal text-apagado">(≈ {fmtMonto(m.monto * tc, "ARS")} hoy)</span>}
                 </span>
               </li>
             ))}
           </ul>
+          {pasados > 0 && (
+            <p className="mt-2 rounded-lg bg-[#fdf6ea] px-2.5 py-1.5 text-xs text-[#a5650c]">
+              {pasados === 1 ? "Una etapa tiene" : `${pasados} etapas tienen`} fecha pasada: suponemos que ya
+              {pasados === 1 ? " se pagó" : " se pagaron"} y {pasados === 1 ? "está reflejada" : "están reflejadas"} en tu caja,
+              así que no se carga{pasados === 1 ? "" : "n"}. Si todavía las debés, cargalas a mano en Nuevo movimiento.
+            </p>
+          )}
           <p className="mt-2 text-[11px] text-apagado">
             Tributos sobre un CIF de {fmtUSD(trib.cif)}: derecho {fmtUSD(trib.derechos)}, tasa de estadística {fmtUSD(trib.estadistica)}, IVA{" "}
             {fmtUSD(trib.iva)} y percepciones de IVA, Ganancias e Ingresos Brutos {fmtUSD(trib.percepciones)}. Las percepciones se recuperan

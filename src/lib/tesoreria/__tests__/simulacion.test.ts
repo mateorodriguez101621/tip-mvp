@@ -48,4 +48,12 @@ describe("simulación Monte Carlo", () => {
     const d = datosDeEjemplo(HOY);
     expect(simular(d.empresa, d.movimientos, HOY)).toEqual(simular(d.empresa, d.movimientos, HOY));
   });
+  it("la probabilidad pasa por valores intermedios, no solo 0% o 100%", () => {
+    const d = datosDeEjemplo(HOY);
+    const probs = [0, 10e6, 20e6, 30e6, 40e6].map(
+      (extra) => simular({ ...d.empresa, cajaArs: d.empresa.cajaArs + extra }, d.movimientos, HOY).probabilidadFaltante,
+    );
+    expect(probs.some((p) => p > 0.05 && p < 0.95)).toBe(true);
+    probs.slice(1).forEach((p, i) => expect(p).toBeLessThanOrEqual(probs[i]));
+  });
 });

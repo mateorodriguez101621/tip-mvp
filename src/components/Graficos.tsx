@@ -9,6 +9,7 @@ import {
   PointElement,
   Tooltip,
   type ChartOptions,
+  type Plugin,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { fechaCorta, sumarDias } from "@/lib/tesoreria/fechas";
@@ -28,6 +29,38 @@ function tituloDia(hoy: string, t: number): string {
   if (t === 0) return `Hoy · ${f}`;
   if (t === 1) return `Mañana · ${f}`;
   return `En ${t} días · ${f}`;
+}
+
+/**
+ * Sombrea el tramo después del último movimiento: ahí el saldo no cambia porque no hay nada
+ * cargado, y sin esta marca parece que la proyección "se trabó".
+ */
+function sinMovimientosDesde(dia: number | undefined): Plugin<"line"> {
+  return {
+    id: "sinMovimientos",
+    beforeDatasetsDraw(chart) {
+      const total = chart.data.labels?.length ?? 0;
+      if (dia === undefined || dia < 0 || dia >= total - 4) return;
+      const { ctx, chartArea: a, scales } = chart;
+      const x = Math.max(a.left, scales.x.getPixelForValue(dia));
+      ctx.save();
+      ctx.fillStyle = "rgba(111,104,144,.07)";
+      ctx.fillRect(x, a.top, a.right - x, a.bottom - a.top);
+      ctx.strokeStyle = "rgba(111,104,144,.45)";
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x, a.top);
+      ctx.lineTo(x, a.bottom);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "#6F6890";
+      ctx.font = "500 11px var(--font-poppins), system-ui, sans-serif";
+      ctx.textAlign = "right";
+      const texto = a.right - x > 150 ? "Sin movimientos cargados" : "Sin movimientos";
+      ctx.fillText(texto, a.right - 6, a.top + 14);
+      ctx.restore();
+    },
+  };
 }
 
 function opciones(hoy: string, filtrarTooltip?: (i: number) => boolean): ChartOptions<"line"> {
@@ -61,6 +94,8 @@ function opciones(hoy: string, filtrarTooltip?: (i: number) => boolean): ChartOp
         border: { display: false },
       },
       y: {
+        // Siempre se ve el cero: si no, un saldo todo negativo parece una montaña rusa.
+        beginAtZero: true,
         ticks: { color: APAGADO, callback: (v) => fmtMillones(Number(v)), maxTicksLimit: 6, font: { size: 11 } },
         // La línea del cero, más marcada que el resto de la grilla.
         grid: { color: (c) => (c.tick?.value === 0 ? "rgba(43,36,112,.35)" : "#EFECF8"), lineWidth: (c) => (c.tick?.value === 0 ? 1.5 : 1) },
@@ -71,7 +106,17 @@ function opciones(hoy: string, filtrarTooltip?: (i: number) => boolean): ChartOp
 }
 
 /** Saldo proyectado; la zona por debajo de cero se pinta de rojo y se marca el peor día. */
-export function GraficoProyeccion({ hoy, saldos, saldoMinimo }: { hoy: string; saldos: number[]; saldoMinimo?: number }) {
+export function GraficoProyeccion({
+  hoy,
+  saldos,
+  saldoMinimo,
+  ultimoDia,
+}: {
+  hoy: string;
+  saldos: number[];
+  saldoMinimo?: number;
+  ultimoDia?: number;
+}) {
   const peor = saldos.indexOf(Math.min(...saldos));
   const radios = saldos.map((_, t) => (t === peor ? 5 : 0));
   return (
@@ -113,6 +158,7 @@ export function GraficoProyeccion({ hoy, saldos, saldoMinimo }: { hoy: string; s
           ],
         }}
         options={opciones(hoy)}
+        plugins={[sinMovimientosDesde(ultimoDia)]}
       />
     </div>
   );
@@ -125,12 +171,14 @@ export function GraficoEscenario({
   escenario,
   p10,
   p90,
+  ultimoDia,
 }: {
   hoy: string;
   base: number[];
   escenario: number[];
   p10: number[];
   p90: number[];
+  ultimoDia?: number;
 }) {
   return (
     <div className="relative h-64 sm:h-80 lg:h-[26rem]" role="img" aria-label="Gráfico del escenario contra la proyección base">
@@ -138,10 +186,11 @@ export function GraficoEscenario({
         data={{
           labels: etiquetas(hoy, base.length),
           datasets: [
-            { label: "Simulaciones (90%)", data: p90, borderWidth: 0, pointRadius: 0, backgroundColor: "rgba(84,73,221,.12)", fill: "+1", cubicInterpolationMode: "monotone" },
-            { label: "Simulaciones (10%)", data: p10, borderWidth: 0, pointRadius: 0, cubicInterpolationMode: "monotone" },
-            { label: "Base", data: base, borderColor: "#A79EF0", backgroundColor: "#A79EF0", borderDash: [5, 4], pointRadius: 0, borderWidth: 2, cubicInterpolationMode: "monotone" },
+            { order: 3, label: "Simulaciones (90%)", data: p90, borderWidth: 0, pointRadius: 0, backgroundColor: "rgba(84,73,221,.12)", fill: "+1", cubicInterpolationMode: "monotone" },
+            { order: 3, label: "Simulaciones (10%)", data: p10, borderWidth: 0, pointRadius: 0, cubicInterpolationMode: "monotone" },
+            { order: 1, label: "Base", data: base, borderColor: "#A79EF0", backgroundColor: "#A79EF0", borderDash: [5, 4], pointRadius: 0, borderWidth: 2, cubicInterpolationMode: "monotone" },
             {
+              order: 0,
               label: "Escenario",
               data: escenario,
               borderColor: "#3B2FC9",
@@ -156,6 +205,7 @@ export function GraficoEscenario({
           ],
         }}
         options={opciones(hoy, (i) => i > 1)}
+        plugins={[sinMovimientosDesde(ultimoDia)]}
       />
     </div>
   );

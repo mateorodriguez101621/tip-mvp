@@ -12,6 +12,10 @@ export interface Analisis {
   movimientosProyectados: MovimientoProyectado[];
   /** Cuántas repeticiones estimó TIP dentro del horizonte. */
   estimados: number;
+  /** Último día del horizonte con algún movimiento; después el saldo ya no cambia. −1 si no hay. */
+  ultimoDia: number;
+  /** Movimientos cargados con fecha pasada, que la proyección toma como de hoy. */
+  vencidos: { cantidad: number; netoArs: number };
   kpis: {
     cajaHoyUsd: number;
     saldoMinimo: number;
@@ -37,6 +41,16 @@ export function analizar({ empresa, movimientos }: DatosTesoreria, hoy: string):
     alertas: generarAlertas(empresa, proyectados, saldos, hoy),
     movimientosProyectados: proyectados,
     estimados: estimados.length,
+    ultimoDia: conDia.reduce((u, m) => (m.dia <= HORIZONTE ? Math.max(u, m.dia) : u), -1),
+    vencidos: conDia
+      .filter((m) => m.vencido && !esEstimado(m))
+      .reduce(
+        (a, m) => {
+          const v = m.moneda === "USD" ? m.monto * empresa.tipoCambio : m.monto;
+          return { cantidad: a.cantidad + 1, netoArs: a.netoArs + (m.tipo === "cobro" ? v : -v) };
+        },
+        { cantidad: 0, netoArs: 0 },
+      ),
     kpis: {
       cajaHoyUsd: empresa.cajaUsd + empresa.cajaArs / empresa.tipoCambio,
       saldoMinimo,

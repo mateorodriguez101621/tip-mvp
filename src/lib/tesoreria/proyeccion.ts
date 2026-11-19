@@ -15,6 +15,8 @@ export interface OpcionesProyeccion {
   tcPorDia?: number[];
   /** Atraso extra por cobro, en días (simulación). */
   atrasoCobro?: (m: Movimiento) => number;
+  /** Multiplicador del monto de cada movimiento (simulación: el monto final no es exacto). */
+  factorMonto?: (m: Movimiento) => number;
 }
 
 /** Tipo de cambio proyectado para el día t: el de hoy, con el salto, devaluándose cada mes. */
@@ -54,7 +56,7 @@ export function proyectar(
     let t = diaDelMovimiento(m, hoy);
     if (m.tipo === "cobro") t += (o.demoraDias ?? 0) + (o.atrasoCobro?.(m) ?? 0);
     if (t > HORIZONTE) continue;
-    const v = valorEnPesos(m, tc(t));
+    const v = valorEnPesos(m, tc(t)) * (o.factorMonto?.(m) ?? 1);
     if (m.tipo === "cobro") flujos[t] += v * (1 - (o.caidaCobranza ?? 0));
     else flujos[t] -= v;
   }

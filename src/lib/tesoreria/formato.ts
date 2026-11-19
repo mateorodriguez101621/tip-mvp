@@ -8,8 +8,9 @@ export const fmtMonto = (n: number, moneda: "ARS" | "USD") =>
 
 /** "$ 12,3 M" para ejes de gráficos. */
 export function fmtMillones(n: number): string {
-  const m = n / 1e6;
-  return "$ " + m.toLocaleString("es-AR", { maximumFractionDigits: Math.abs(m) < 10 ? 1 : 0 }) + " M";
+  const m = Math.abs(n) / 1e6;
+  const signo = n < 0 ? "−" : "";
+  return signo + "$ " + m.toLocaleString("es-AR", { maximumFractionDigits: m < 10 ? 1 : 0 }) + " M";
 }
 
 export function enDias(dias: number): string {

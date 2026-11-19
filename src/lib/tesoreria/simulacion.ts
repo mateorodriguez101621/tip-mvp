@@ -39,24 +39,36 @@ export function generador(semilla: number): () => number {
   };
 }
 
+/** Desvío del monto final de cada cobro (ajustes, notas de crédito, pagos parciales). */
+export const DESVIO_COBROS = 0.12;
+/** Desvío del monto final de pagos e impuestos en pesos (los en dólares ya varían con el dólar). */
+export const DESVIO_PAGOS = 0.04;
+
 /**
  * Monte Carlo: en cada corrida el tipo de cambio sigue un camino aleatorio
- * (tendencia = devaluación esperada, con volatilidad) y cada cobro se atrasa
- * 10 a 40 días con probabilidad (1 − puntualidad del cliente).
+ * (tendencia = devaluación esperada, con volatilidad), cada cobro se atrasa
+ * 10 a 60 días con probabilidad (1 − puntualidad del cliente), y los montos
+ * finales se desvían de lo cargado. Sin la incertidumbre en los montos, la
+ * probabilidad salta de 0% a 100% casi sin valores intermedios.
  */
 export function simular(
   s: Supuestos,
   movimientos: Movimiento[],
   hoy: string,
   escenario: Pick<OpcionesProyeccion, "saltoDolar" | "demoraDias" | "caidaCobranza"> = {},
-  { corridas = 1000, volatilidadAnual = 0.12, semilla = 7 }: OpcionesSimulacion = {},
+  { corridas = 1000, volatilidadAnual = 0.25, semilla = 7 }: OpcionesSimulacion = {},
 ): ResultadoSimulacion {
   const rnd = generador(semilla);
   const deriva = Math.log(1 + s.devaluacionMensual / 100) / 30;
   const sigma = volatilidadAnual * Math.sqrt(1 / 365);
+  const normal = () => Math.sqrt(-2 * Math.log(rnd() + 1e-12)) * Math.cos(2 * Math.PI * rnd());
   const atrasoCobro = (m: Movimiento) => {
     const p = (m.puntualidad ?? PUNTUALIDAD_POR_DEFECTO) / 100;
-    return rnd() > p ? Math.round(10 + rnd() * 30) : 0;
+    return rnd() > p ? Math.round(10 + rnd() * 50) : 0;
+  };
+  const factorMonto = (m: Movimiento) => {
+    if (m.tipo === "cobro") return Math.max(0, 1 + DESVIO_COBROS * normal());
+    return m.moneda === "ARS" ? Math.max(0, 1 + DESVIO_PAGOS * normal()) : 1;
   };
 
   const resultados: number[][] = [];
@@ -68,10 +80,9 @@ export function simular(
     let x = s.tipoCambio * (1 + (escenario.saltoDolar ?? 0));
     for (let t = 0; t <= HORIZONTE; t++) {
       tcPorDia.push(x);
-      const z = Math.sqrt(-2 * Math.log(rnd() + 1e-12)) * Math.cos(2 * Math.PI * rnd());
-      x *= Math.exp(deriva + sigma * z);
+      x *= Math.exp(deriva + sigma * normal());
     }
-    const saldos = proyectar(s, movimientos, hoy, { ...escenario, tcPorDia, atrasoCobro });
+    const saldos = proyectar(s, movimientos, hoy, { ...escenario, tcPorDia, atrasoCobro, factorMonto });
     resultados.push(saldos);
     peores.push(Math.min(...saldos));
     rojos.push(saldos.reduce((n, v) => n + (v < 0 ? 1 : 0), 0));

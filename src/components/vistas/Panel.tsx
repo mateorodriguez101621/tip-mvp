@@ -70,7 +70,7 @@ function Leyenda({ color, texto, punteada }: { color: string; texto: string; pun
 export function VistaPanel() {
   const { datos, analisis, hoy } = useDatos();
   if (!datos || !analisis) return <Cargando />;
-  const { kpis, saldos, alertas, proximos, estimados } = analisis;
+  const { kpis, saldos, alertas, proximos, estimados, ultimoDia, vencidos } = analisis;
   const { empresa } = datos;
   const sinMovimientos = datos.movimientos.length === 0;
   const cajaHoyArs = empresa.cajaArs + empresa.cajaUsd * empresa.tipoCambio;
@@ -144,8 +144,26 @@ export function VistaPanel() {
               {kpis.saldoMinimo < 0 && <Leyenda color="#D64545" texto="Sin caja" />}
             </div>
           </div>
-          <GraficoProyeccion hoy={hoy} saldos={saldos} saldoMinimo={empresa.saldoMinimo} />
+          <GraficoProyeccion hoy={hoy} saldos={saldos} saldoMinimo={empresa.saldoMinimo} ultimoDia={ultimoDia} />
+          {vencidos.cantidad > 0 && (
+            <div className="mt-3 rounded-lg border border-[#f1d9b5] bg-[#fdf6ea] px-3 py-2 text-[13px]" data-testid="aviso-vencidos">
+              <b className="text-[#a5650c]">
+                {vencidos.cantidad === 1 ? "Hay 1 movimiento vencido" : `Hay ${vencidos.cantidad} movimientos vencidos`}
+              </b>{" "}
+              ({vencidos.netoArs < 0 ? "−" : "+"}
+              {fmtARS(Math.abs(vencidos.netoArs))} en total) y los proyectamos todos para hoy. Si ya{" "}
+              {vencidos.cantidad === 1 ? "se pagó o cobró" : "se pagaron o cobraron"}, borralos en{" "}
+              <Link href="/datos" className="font-semibold text-violeta-oscuro underline">Datos</Link> y actualizá tu caja: si no, la
+              proyección arranca más abajo (o más arriba) de lo real.
+            </div>
+          )}
           <p className="mt-3 text-xs text-apagado">
+            {ultimoDia >= 0 && ultimoDia < HORIZONTE - 4 && (
+              <>
+                Después del {fechaCorta(sumarDias(hoy, ultimoDia))} no hay movimientos cargados, por eso el saldo queda fijo
+                (zona gris).{" "}
+              </>
+            )}
             Saldo en pesos. Los pagos en dólares se convierten al tipo de cambio proyectado de cada fecha.
             {estimados > 0 && (
               <>
